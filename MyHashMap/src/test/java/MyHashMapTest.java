@@ -21,7 +21,7 @@ public class MyHashMapTest {
         myHashMap.put(2, "Hello, wor");
         myHashMap.put(5, 12345);
         myHashMap.put(6, 12.25);
-        myHashMap.put("пробел", ' ');
+        myHashMap.put("space", " ");
         myHashMap.put("char", ';');
 
         assertEquals("Hello, wor", myHashMap.get(2));
@@ -29,8 +29,85 @@ public class MyHashMapTest {
         assertEquals("Hello, YYYYYYYYYY!", myHashMap.get(3));
         assertEquals(12345, myHashMap.get(5));
         assertEquals(12.25, myHashMap.get(6));
-        assertEquals(" ", myHashMap.get("пробел"));
+        assertEquals(" ", myHashMap.get("space"));
         assertEquals(';', myHashMap.get("char"));
+    }
+
+    @Test
+    public void testCustomObject() {
+        Person person = new Person("Павел", 22);
+        myHashMap.put("павел", person);
+
+        assertEquals(person, myHashMap.get("павел"));
+
+        myHashMap.remove("павел");
+        assertNull(myHashMap.get("павел"));
+    }
+
+    @Test
+    public void testPutAndGetWithBigPrimitiveData() {
+        for(int i = 0; i < 100000; i++) {
+            myHashMap.put(i, "value " + i);
+        }
+
+        for (int i = 0; i < 100000; i++) {
+            assertEquals("value " + i, myHashMap.get(i));
+        }
+        assertEquals(100000, myHashMap.size());
+    }
+
+    @Test
+    public void testPutAndGetWithBigObjectData() {
+        for(int i = 0; i < 100000; i++) {
+            Person person = new Person("Name " + i, i);
+            myHashMap.put(i, person);
+        }
+
+        for(int i = 0; i < 50000; i++) {
+            myHashMap.remove(i);
+        }
+
+        for (int i = 50000; i < 100000; i++) {
+            assertEquals(new Person("Name " + i, i), myHashMap.get(i));
+        }
+
+    }
+
+    @Test
+    public void testPutEmptyValue() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            myHashMap.put(1, "");
+        });
+
+        assertEquals("Value cannot be empty", exception.getMessage());
+
+    }
+
+    @Test
+    public void testPutEmptyKey() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            myHashMap.put("", "123");
+        });
+
+        assertEquals("Key cannot be empty", exception.getMessage());
+    }
+
+    @Test
+    public void testPutNullKey() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            myHashMap.put(null, "nullValue");
+        });
+        assertEquals("Key cannot be null", exception.getMessage());
+    }
+
+    @Test
+    public void testPutNullValue() {
+        MyHashMap<String, String> map = new MyHashMap<>();
+        map.put("nullValueKey", null);
+        assertNull(map.get("nullValueKey"));
+
+        map.put("nullValueKey", "notNull");
+        assertEquals("notNull", map.get("nullValueKey"));
     }
 
     @Test
@@ -55,17 +132,6 @@ public class MyHashMapTest {
         assertEquals("Value 31", myHashMap.get(31));
     }
 
-    @Test
-    public void testCustomObject() {
-        Person person = new Person("Павел", 22);
-        myHashMap.put("павел", person);
-
-        assertEquals(person, myHashMap.get("павел"));
-
-        myHashMap.remove("павел");
-        assertNull(myHashMap.get("павел"));
-    }
-
 
     @Test
     public void testOverwriteValue() {
@@ -77,29 +143,10 @@ public class MyHashMapTest {
     }
 
     @Test
-    public void testNullKey() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            myHashMap.put(null, "nullValue");
-        });
-        assertEquals("Key cannot be null", exception.getMessage());
-    }
-
-    @Test
-    public void testNullValue() {
-        MyHashMap<String, String> map = new MyHashMap<>();
-        map.put("nullValueKey", null);
-        assertNull(map.get("nullValueKey"));
-
-        map.put("nullValueKey", "notNull");
-        assertEquals("notNull", map.get("nullValueKey"));
-    }
-
-    @Test
     public void testCollision() throws IllegalAccessException, NoSuchFieldException {
         Person person = new Person("Павел", 22);
         MyHashMap myHashMap = new MyHashMap();
         myHashMap.put(2, "Hello, world!");
-        myHashMap.put(1, "");
         myHashMap.put(3, "Hello, YYYYYYYYYY!");
         myHashMap.put("5", "Hello, Artur!");
         myHashMap.put(6, "Hello, Artur!");
@@ -110,13 +157,9 @@ public class MyHashMapTest {
         myHashMap.put("abra ka dabra", 10);
         myHashMap.put("wave my wand", 20);
 
-        Field arrayField = MyHashMap.class.getDeclaredField("array");
+        Field arrayField = MyHashMap.class.getDeclaredField("table");
         arrayField.setAccessible(true);
         MyHashMap.Node[] array = (MyHashMap.Node[]) arrayField.get(myHashMap);
-
-        System.out.println(myHashMap.get(123253));
-        System.out.println(array[myHashMap.getIndex("5")].getNext().getValue());
-
 
         assertEquals(myHashMap.get(123253), array[myHashMap.getIndex("5")].getNext().getValue());
 
